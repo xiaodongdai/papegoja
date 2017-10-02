@@ -1,0 +1,28 @@
+{
+  "manifest_version": 2,
+
+  "name": "papegoja_svt",
+  "description": "This extension allows the user to repeat a part of the svt video",
+  "version": "1.0",
+
+  "web_accessible_resources": ["circle.png", "letter_a.png"],
+  //"background": {"scripts":["background.js"]},
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "background": {"scripts":["background.js"]},
+  "content_scripts": [
+    {
+     "matches": ["*://*.svtplay.se/*"],
+     "css": ["inject.css"],
+     "js": ["inject.js"],
+     "run_at": "document_start",
+     "all_frames" : true
+    }
+  ],
+  "browser_action": {
+    "default_icon": "icon.png"
+    //"default_popup": "changeLang.html"
+  }
+}
