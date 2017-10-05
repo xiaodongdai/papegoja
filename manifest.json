@@ -5,7 +5,7 @@
   "description": "This extension allows the user to repeat a part of the svt video",
   "version": "1.0",
 
-  "web_accessible_resources": ["circle.png", "letter_a.png"],
+  "web_accessible_resources": ["circle.png", "letter_a.png", "pause.png", "arrow_left_A.png", "arrow_left_B.png", "arrow_right_A.png", "arrow_right_B.png"],
   //"background": {"scripts":["background.js"]},
   "permissions": [
     "activeTab",
