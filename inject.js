@@ -12,16 +12,19 @@ function appendText(parent, letter){
   // insert the A note
   var text = document.createElement('div')
   text.className = "a_b_notes svp_ui-controls__timeline-progress--time-remaining svp_js-controls-timeline--progress-time-remaining"
-  text.style.bottom = '-25px'
+  text.style.bottom = '-30px'
   text.innerHTML = letter
   text.style.position = 'absolute'
   text.style.display = 'none'
-  text.style.fontSize = '20px'
+  text.style.fontSize = '16px'
+  text.style.width = '10px'
   text.draggable = true
+  
   //TODO drag: https://stackoverflow.com/questions/6230834/html5-drag-and-drop-anywhere-on-the-screen
+  //https://javascript.info/mouse-drag-and-drop
   text.ondragstart = (ev) => {
-    let style = windows.getComputedStyle(ev.target, null)
-    ev.dataTransfer.setData("text/plain", parseInt())
+    let style = window.getComputedStyle(ev.target, null)
+    ev.dataTransfer.setData("text/plain", parseInt(style.getPropertyValue("left"), 10) - ev.clientX)
   }
   parent.appendChild(text)
   return text
@@ -60,6 +63,20 @@ function main() {
   var BForward = appendButton(videoArea, 'arrow_right_B.png', true)  
   var a_text = appendText(timeline, 'A')
   var b_text = appendText(timeline, 'B')
+  timeline.ondrop = ev => {
+    console.log('drop called')
+    var offset = event.dataTransfer.getData("text/plain")
+    let parent = timeline.getBoundingClientRect()
+    ev.target.style.left = `(event.clientX + offset) / parent.width * 100%`
+    event.preventDefault();
+    return false
+  }
+  
+  timeline.ondragover = ev => {
+    console.log('dragover')
+    ev.preventDefault()
+    return false
+  }
   
   function getFirstElement(name, className) {
     var tmp = document.getElementsByClassName(className)
@@ -103,11 +120,11 @@ function main() {
     let parent = timeline.getBoundingClientRect()
     let rect_a = a_text.getBoundingClientRect()
     let rect_b = b_text.getBoundingClientRect()
-    if(rect_b.left < rect_a.left + 10) {
+    if(rect_b.left < rect_a.left + 20) {
       console.log('parent', parent)
       console.log('rect_a', rect_a)
       console.log('rect_b', rect_b)
-      let overlapp = rect_a.left + 10 - rect_b.left
+      let overlapp = rect_a.left + 20 - rect_b.left
       let move = overlapp / 2
       let a_pos = rect_a.left - parent.left - move
       let b_pos = rect_b.left - parent.left + move
@@ -121,7 +138,7 @@ function main() {
   button1.onclick = () => {
     try{
       let left =  getPosPercentage()
-      a_text.style.left = getPosPercentage()
+      a_text.style.left = left
       a_text.style.display = 'block'
       enableButtons([button2, ABackward, AForward])
       startPoint = getVideoCtl().currentTime
