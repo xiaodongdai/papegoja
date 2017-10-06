@@ -22,7 +22,8 @@ function appendText(parent, letter){
   
   //TODO drag: https://stackoverflow.com/questions/6230834/html5-drag-and-drop-anywhere-on-the-screen
   //https://javascript.info/mouse-drag-and-drop
-  text.ondragstart = (ev) => {
+  text.ondragstart = ev => {
+    console.log('ondragstart called')
     let style = window.getComputedStyle(ev.target, null)
     ev.dataTransfer.setData("text/plain", parseInt(style.getPropertyValue("left"), 10) - ev.clientX)
   }
@@ -49,6 +50,7 @@ function main() {
   if(!videoArea || !timeline) {
     if(retries === 2) {
       throw new Error('something is wrong, return')
+      return
     }
     retries += 1
     setTimeout(main, 300)
@@ -61,21 +63,22 @@ function main() {
   var AForward = appendButton(videoArea, 'arrow_right_A.png', true)
   var BBackward = appendButton(videoArea, 'arrow_left_B.png', true)
   var BForward = appendButton(videoArea, 'arrow_right_B.png', true)  
+  
   var a_text = appendText(timeline, 'A')
   var b_text = appendText(timeline, 'B')
-  timeline.ondrop = ev => {
+  
+  timeline.parentElement.ondrop = ev => {
     console.log('drop called')
+    event.preventDefault();
     var offset = event.dataTransfer.getData("text/plain")
     let parent = timeline.getBoundingClientRect()
     ev.target.style.left = `(event.clientX + offset) / parent.width * 100%`
-    event.preventDefault();
-    return false
+
   }
   
-  timeline.ondragover = ev => {
+  timeline.parentElement.ondragover = ev => {
     console.log('dragover')
     ev.preventDefault()
-    return false
   }
   
   function getFirstElement(name, className) {
