@@ -14,7 +14,7 @@
   "background": {"scripts":["background.js"]},
   "content_scripts": [
     {
-     "matches": ["*://*.svtplay.se/*"],
+     "matches": ["*://*.svtplay.se/video/*"],
      "css": ["inject.css"],
      "js": ["inject.js"],
      "run_at": "document_start",

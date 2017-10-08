@@ -2,3 +2,20 @@
   bottom: 3px;
   right: 200px;
 }
+
+.my_button {
+  display: inline-block;
+  background-size: 34px;
+  height: 48ps;
+  margin-bottom: 21px;
+  width: 48px;
+  position: relative;
+  border: none;
+  border-radius: 5px 5px 5px 5px;
+  background-color: transparent;
+  background-position: 7px 7px;
+  font-weight: 400;
+  box-sizing: content-box;
+ -webkit-appearance: button;
+  text-transform: none;
+}

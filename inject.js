@@ -1,9 +1,18 @@
-function appendButton(parent, imgName, isDisabled) {
+function appendButton(parent, imgName, isDisabled, title) {
   var btn = document.createElement('button')
-  btn.className= "svp_js-controls-btn--captions svp_ui-controls__button-captions svp_is--visible svp_is--active"
+  //btn.className= "svp_js-controls-btn--captions svp_ui-controls__button-captions svp_is--visible svp_is--active"
+  btn.className = 'my_button svp_ui-controls__button-captions svp_is--visible svp_is--active'
   var url = chrome.extension.getURL(imgName)
   btn.style.backgroundImage = `url(${url})`
   btn.disabled = isDisabled
+  if(isDisabled === true) {
+    btn.style.filter = 'grayscale(100)'
+  }
+  btn.title = title
+  var span = document.createElement('span')
+  span.className = 'svp_ui-controls__hidden svp_ui-controls__captions-label'
+  span.innerHTML = title
+  btn.appendChild(span)
   parent.appendChild(btn)
   return btn
 }
@@ -19,13 +28,20 @@ function appendText(parent, letter){
   text.style.fontSize = '16px'
   text.style.width = '10px'
   text.draggable = true
+  text.id = 'id_mark_' + letter
   
   //TODO drag: https://stackoverflow.com/questions/6230834/html5-drag-and-drop-anywhere-on-the-screen
   //https://javascript.info/mouse-drag-and-drop
   text.ondragstart = ev => {
-    console.log('ondragstart called')
-    let style = window.getComputedStyle(ev.target, null)
-    ev.dataTransfer.setData("text/plain", parseInt(style.getPropertyValue("left"), 10) - ev.clientX)
+    let rect = ev.target.getBoundingClientRect()
+    let offset = null
+    if(letter === 'A') {
+      offset = rect.right - ev.clientX
+    } else {
+      offset = rect.left - ev.clientX // will be negative number!
+    }
+    console.log(`ondragstart called, right=${rect.right}, cientX=${ev.clientX}, offset=${offset}`)
+    ev.dataTransfer.setData("text/plain", `${offset},${ev.target.id}`)
   }
   parent.appendChild(text)
   return text
@@ -57,28 +73,18 @@ function main() {
     return
   }
   
-  var button1 = appendButton(videoArea, 'letter_a.png', false)
-  var button2 = appendButton(videoArea, 'circle.png', true)
-  var ABackward = appendButton(videoArea, 'arrow_left_A.png', true)
-  var AForward = appendButton(videoArea, 'arrow_right_A.png', true)
-  var BBackward = appendButton(videoArea, 'arrow_left_B.png', true)
-  var BForward = appendButton(videoArea, 'arrow_right_B.png', true)  
+  var button1 = appendButton(videoArea, 'letter_a.png', false, 'Set start point(A)')
+  var button2 = appendButton(videoArea, 'circle.png', false, 'Set end point(D)')
+  var ABackward = appendButton(videoArea, 'arrow_left_A.png', true, 'Move start point backward(Z)')
+  var AForward = appendButton(videoArea, 'arrow_right_A.png', true, 'Move start point forward(X)')
+  var BBackward = appendButton(videoArea, 'arrow_left_B.png', true, 'Move end point backward(V)')
+  var BForward = appendButton(videoArea, 'arrow_right_B.png', true, 'Move end point forward(B)')  
   
   var a_text = appendText(timeline, 'A')
   var b_text = appendText(timeline, 'B')
   
-  timeline.parentElement.ondrop = ev => {
-    console.log('drop called')
-    event.preventDefault();
-    var offset = event.dataTransfer.getData("text/plain")
-    let parent = timeline.getBoundingClientRect()
-    ev.target.style.left = `(event.clientX + offset) / parent.width * 100%`
-
-  }
-  
-  timeline.parentElement.ondragover = ev => {
-    console.log('dragover')
-    ev.preventDefault()
+  function isFullScreen() {
+    return document.fullscreen || document.mozFullScreen || document.webkitIsFullScreen || document.msFullscreenElement
   }
   
   function getFirstElement(name, className) {
@@ -90,12 +96,18 @@ function main() {
     return tmp[0]  
   } 
   
+  
+  
   function getCursor() {
     return getFirstElement('Cursor', 'svp_ui-controls__timeline-progress--handle svp_js-controls-timeline--progress-handle svp_css-timeline--progress-handle')
   }
   
   function getVideoCtl() {
     return getFirstElement('videoCtl', 'svp_video')
+  }
+  
+  function getCaptionBtn() {
+    return getFirstElement('captionBtn', 'svp_js-controls-btn--captions svp_ui-controls__button-captions')
   }
   
   function getPlayButton() {
@@ -111,39 +123,92 @@ function main() {
     return tmp[0]
   }
   
-  function getPosPercentage(pos) {
+  document.addEventListener('keydown', e => {
+    if(e.keyCode === 65) {
+      button1.click()
+    } else if(e.keyCode === 68) {
+      button2.click()
+    } else if(e.keyCode === 83) {
+
+      let captionBtn = getCaptionBtn()
+      console.log('67 clicked!', captionBtn)
+      captionBtn.click()
+      e.stopPropagation()
+    }
+  })
+  
+  
+  timeline.parentElement.ondrop = ev => {
+    console.log('drop called')
+    event.preventDefault()
+    let data = event.dataTransfer.getData("text/plain").split(',')
+    let offsetMouse = parseInt(data[0], 10)
+    let id = data[1]
+    let parent = timeline.getBoundingClientRect()
+    let offsetParent = parent.x
+    console.log(ev.target)
+    if(id === 'id_mark_A') {
+      let rightUpper = ev.clientX + offsetMouse - offsetParent
+      console.log(`clientX=${ev.clientX}, offsetMouse=${offsetMouse}, offsetParent=${offsetParent}, rightUpper=${rightUpper}`)  
+      let newStartPoint = px2Time(rightUpper)
+      if(newStartPoint > endPoint && state >= stateEnum.POINT_B_SET) {
+        newStartPoint = endPoint - 2
+      }
+      console.log(`clientX=${ev.clientX}, offsetMouse=${offsetMouse}, offsetParent=${offsetParent}, newStartPoint=${newStartPoint}`)  
+      moveStartPoint(newStartPoint - startPoint)
+    } else if (id === 'id_mark_B'){
+      let leftUpper = ev.clientX + offsetMouse - offsetParent
+      newEndPoint = px2Time(leftUpper)
+      if(newEndPoint < startPoint && state >= stateEnum.POINT_A_SET) {
+        newEndPoint = startPoint + 2
+      }
+      moveEndPoint(newEndPoint - endPoint)
+    }
+  }
+  
+  timeline.parentElement.ondragover = ev => {
+    //console.log('dragover')
+    ev.preventDefault()
+  }
+  
+
+  
+  function px2Time(pos) {
+    if(pos < 0) {
+      pos = 0
+    }
+    let parent = timeline.getBoundingClientRect()
+    if(pos > parent.width) {
+      pos = parent.widthc
+    }
+    let duration = getVideoCtl().duration
+    console.log(`duration=${duration}, pos=${pos}, parent.width=${parent.width}`)
+    return duration * pos / parent.width
+  } 
+  
+  function getPosPercentage(pos, isStart) {
     let videoCtl = getVideoCtl()
     if(!pos) {
       var pos = videoCtl.currentTime
     }
-    return `${pos/videoCtl.duration*100}%`
+    let minus = 0
+    if(isStart) {
+      let widthTimeline = timeline.getBoundingClientRect().width
+      let widthLetter = parseInt(a_text.style.width, 10)
+      minus = widthLetter * 100 / widthTimeline
+      console.log(`widthTimeline=${widthTimeline}, widthLetter=${widthLetter}, minus = ${minus}`)
+    }
+    
+    return `${(pos * 100/videoCtl.duration - minus)}%`
   }
   
-  function tuneTextPos(a_text, b_text) {
-    let parent = timeline.getBoundingClientRect()
-    let rect_a = a_text.getBoundingClientRect()
-    let rect_b = b_text.getBoundingClientRect()
-    if(rect_b.left < rect_a.left + 20) {
-      console.log('parent', parent)
-      console.log('rect_a', rect_a)
-      console.log('rect_b', rect_b)
-      let overlapp = rect_a.left + 20 - rect_b.left
-      let move = overlapp / 2
-      let a_pos = rect_a.left - parent.left - move
-      let b_pos = rect_b.left - parent.left + move
-      console.log(`move text, move = ${move}`)
-      a_text.style.left = `${a_pos / parent.width * 100}%`
-      b_text.style.left = `${b_pos / parent.width * 100}%`
-      console.log(`a: ${a_text.style.left}, b: ${b_text.style.left}`)
-    }
-  }
   
   button1.onclick = () => {
     try{
-      let left =  getPosPercentage()
+      let left =  getPosPercentage(undefined, true)
       a_text.style.left = left
       a_text.style.display = 'block'
-      enableButtons([button2, ABackward, AForward])
+      enableButtons([ABackward, AForward])
       startPoint = getVideoCtl().currentTime
       state = stateEnum.POINT_A_SET
     }
@@ -158,8 +223,7 @@ function main() {
     }
     startPoint += pos
     getVideoCtl().currentTime = startPoint
-    a_text.style.left = getPosPercentage()
-    tuneTextPos(a_text, b_text)
+    a_text.style.left = getPosPercentage(undefined, true)
   }
 
   function moveEndPoint(pos) {
@@ -168,18 +232,19 @@ function main() {
     }
     endPoint += pos
     b_text.style.left = getPosPercentage(endPoint)
-    tuneTextPos(a_text, b_text)
   }  
 
   function disableButtons(btnArr) {
     btnArr.forEach(btn => {
       btn.disabled = true
+      btn.style.filter='grayscale(100)'
     })
   }
   
   function enableButtons(btnArr) {
     btnArr.forEach(btn => {
       btn.disabled = false
+      btn.style.filter=''
     })
   }
   
@@ -191,15 +256,27 @@ function main() {
         let url = chrome.extension.getURL('circle.png')
         button2.style.backgroundImage = `url(${url})`
         state = stateEnum.POINT_B_SET_PAUSE
+        return
       } else if(state === stateEnum.POINT_B_SET_PAUSE){
         let url = chrome.extension.getURL('pause.png')
         button2.style.backgroundImage = `url(${url})`
         videoCtl.play()
         state = stateEnum.POINT_B_SET
-      } else if(state === stateEnum.POINT_A_SET) {
+        return
+      } else if(state === stateEnum.INIT) {
+        let videoCtl = getVideoCtl()
+        if(videoCtl.currentTime < 10 ){
+          videoCtl.currentTime = 0
+        } else {
+          videoCtl.currentTime = videoCtl.currentTime - 10
+        }
+        button1.click()
+      }
+      
+      if(state === stateEnum.POINT_A_SET) {
         b_text.style.left = getPosPercentage()
         b_text.style.display = 'block'
-        tuneTextPos(a_text, b_text)
+        // tuneTextPos(a_text, b_text)
         endPoint = videoCtl.currentTime
         if(endPoint <= startPoint) {
           return
@@ -238,13 +315,14 @@ function main() {
           videoCtl.ontimeupdate = originEventHandler
           playButton.onclick = originPlayButtonClick
           document.removeEventListener('keydown', keydownListener)
-          disableButtons([button2, ABackward, AForward, BBackward, BForward])
+          disableButtons([ABackward, AForward, BBackward, BForward])
           state = stateEnum.INIT
         }
         
         // keydown
         // z 90, x 88, n 78, m 77
-        document.addEventListener('keydown', keydownListener) 
+        document.addEventListener('keydown', keydownListener)
+        let url = chrome.extension.getURL('pause.png')
         state = stateEnum.POINT_B_SET
       }
     }
@@ -268,6 +346,8 @@ function main() {
   BForward.onclick = () => {
     moveEndPoint(3)
   }
+  
+  
   
   /*
   <div class="svp_ui-controls__timeline-progress--time-remaining svp_js-controls-timeline--progress-time-remaining" style="">-57:58</div>
