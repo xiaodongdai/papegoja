@@ -265,12 +265,14 @@ function main() {
         return
       } else if(state === stateEnum.INIT) {
         let videoCtl = getVideoCtl()
-        if(videoCtl.currentTime < 10 ){
+        let curPoint = videoCtl.currentTime
+        if(curPoint < 10) {
           videoCtl.currentTime = 0
         } else {
-          videoCtl.currentTime = videoCtl.currentTime - 10
+          videoCtl.currentTime = curPoint - 10
         }
         button1.click()
+        videoCtl.currentTime = curPoint
       }
       
       if(state === stateEnum.POINT_A_SET) {
@@ -279,7 +281,7 @@ function main() {
         // tuneTextPos(a_text, b_text)
         endPoint = videoCtl.currentTime
         if(endPoint <= startPoint) {
-          return
+          endPoint = startPoint + 3
         }
         enableButtons([ABackward, AForward, BBackward, BForward])
         videoCtl.currentTime = startPoint
@@ -313,9 +315,11 @@ function main() {
           let videoCtl = getVideoCtl()
           videoCtl.play()
           videoCtl.ontimeupdate = originEventHandler
-          playButton.onclick = originPlayButtonClick
+          playButton.onclick = null
           document.removeEventListener('keydown', keydownListener)
           disableButtons([ABackward, AForward, BBackward, BForward])
+          let url = chrome.extension.getURL('circle.png')
+          button2.style.backgroundImage = `url(${url})`
           state = stateEnum.INIT
         }
         
@@ -323,6 +327,7 @@ function main() {
         // z 90, x 88, n 78, m 77
         document.addEventListener('keydown', keydownListener)
         let url = chrome.extension.getURL('pause.png')
+        button2.style.backgroundImage = `url(${url})`
         state = stateEnum.POINT_B_SET
       }
     }

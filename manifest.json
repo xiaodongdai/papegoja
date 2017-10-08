@@ -3,15 +3,13 @@
 
   "name": "papegoja_svt",
   "description": "This extension allows the user to repeat a part of the svt video",
-  "version": "1.0",
+  "version": "1.2",
 
   "web_accessible_resources": ["circle.png", "letter_a.png", "pause.png", "arrow_left_A.png", "arrow_left_B.png", "arrow_right_A.png", "arrow_right_B.png"],
-  //"background": {"scripts":["background.js"]},
   "permissions": [
     "activeTab",
     "storage"
   ],
-  "background": {"scripts":["background.js"]},
   "content_scripts": [
     {
      "matches": ["*://*.svtplay.se/video/*"],
@@ -23,6 +21,5 @@
   ],
   "browser_action": {
     "default_icon": "circle.png"
-    //"default_popup": "changeLang.html"
   }
 }
