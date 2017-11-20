@@ -2,8 +2,8 @@
   "manifest_version": 2,
 
   "name": "papegoja_svt",
-  "description": "This extension allows the user to repeat a part of the svt video",
-  "version": "1.2",
+  "description": "This extension allows the user to repeat certain part of the videos on the SVT website",
+  "version": "1.5",
 
   "web_accessible_resources": ["circle.png", "letter_a.png", "pause.png", "arrow_left_A.png", "arrow_left_B.png", "arrow_right_A.png", "arrow_right_B.png"],
   "permissions": [

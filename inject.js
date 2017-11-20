@@ -10,6 +10,7 @@ function appendButton(parent, imgName, isDisabled, title) {
     if(isDisabled === true) {
         btn.style.filter = 'grayscale(100)'
     }
+    btn.style.display = 'inline-block'
     btn.title = title
     var span = document.createElement('span')
     span.className = 'svp_ui-controls__hidden svp_ui-controls__captions-label'
@@ -105,7 +106,7 @@ function main() {
     }
   
     function getCaptionBtn() {
-        return getFirstElement('captionBtn', 'svp_js-controls-btn--captions svp_ui-controls__button-captions')
+        return getFirstElement('captionBtn', 'svp_js-controls-btn--language svp_ui-controls__button-captions svp_is--visible')
     }
   
     function getPlayButton() {
